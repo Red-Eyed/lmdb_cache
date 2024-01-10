@@ -36,7 +36,6 @@ class LMDBReadDict:
         self._db_path = path
         self._env = self.get_env(self._db_path)
 
-    @cached_property
     def __len__(self):
         env = self._env
         return env.stat()["entries"]
