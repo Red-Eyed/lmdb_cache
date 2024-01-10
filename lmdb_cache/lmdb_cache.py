@@ -1,24 +1,18 @@
 
-from functools import cached_property
 import shutil
 from typing import Any, Iterable
 import lmdb
 from pathlib import Path
 import dill
 import tqdm
-import blosc2
 
 
 def _serialize(obj) -> bytes:
     data = dill.dumps(obj, protocol=dill.HIGHEST_PROTOCOL)
-    data = blosc2.compress2(data, typesize=4,
-                            codec=blosc2.Codec.ZSTD,
-                            )
     return data
 
 
 def _deserialize(data: bytes) -> Any:
-    data = blosc2.decompress2(data)
     obj = dill.loads(data)
     return obj
 
