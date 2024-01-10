@@ -1,4 +1,5 @@
 
+from functools import partial
 import shutil
 from typing import Any, Iterable
 import lmdb
@@ -65,9 +66,10 @@ def _get_size(key: bytes, value: bytes):
 def dump2lmdb(db_path: Path, iterable: Iterable, size_multiplier=100, block_size=1024**2):
     db_path.mkdir(parents=True)
     all_size = 0
+    open_lmdb = partial(lmdb.open, path=db_path.as_posix(), subdir=True, metasync=False, sync=False, writemap=True, map_async=True)
     with tqdm.tqdm(desc=f"Dumping to {db_path}", unit="B", unit_scale=True) as pbar:
         try:
-            env = lmdb.open(db_path.as_posix(), subdir=True)
+            env = open_lmdb()
             for key, value in enumerate(iterable):
                 key, value = _get_data(key, value)
                 size = _get_size(key, value)
@@ -79,10 +81,10 @@ def dump2lmdb(db_path: Path, iterable: Iterable, size_multiplier=100, block_size
                         txn.put(key, value)
                 except lmdb.MapFullError:
                     # when LMDB reaches max size: close it, then reopenen with increased size
-                    all_size = max(block_size, size) * size_multiplier
+                    all_size += max(block_size, size) * size_multiplier
                     env.close()
 
-                    env = lmdb.open(db_path.as_posix(), subdir=True, map_size=all_size)
+                    env = open_lmdb(map_size=all_size)
                     with env.begin(write=True) as txn:
                         txn.put(key, value)
 
