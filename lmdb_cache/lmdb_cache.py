@@ -27,23 +27,23 @@ class LMDBReadDict:
     def __init__(self, db_path: Path) -> None:
         super().__init__()
         self._db_path = Path(db_path).expanduser().resolve()
+        self._env = self.get_env(self._db_path)
 
     def __getstate__(self):
-        state = self.__dict__.copy()
+        return self._db_path
 
-        # Do not pickle next attributes:
-        state.pop("_env", None)
-        state.pop("_txn", None)
-        return state
+    def __setstate__(self, path):
+        self._db_path = path
+        self._env = self.get_env(self._db_path)
 
     @cached_property
     def __len__(self):
         env = self._env
         return env.stat()["entries"]
 
-    @cached_property
-    def _env(self):
-        env = lmdb.open(self._db_path.as_posix(),
+    @staticmethod
+    def get_env(db_path: Path):
+        env = lmdb.open(db_path.as_posix(),
                         subdir=True,
                         readonly=True,
                         lock=False,
@@ -51,12 +51,11 @@ class LMDBReadDict:
                         meminit=False)
         return env
 
-    @cached_property
     def _txn(self):
         return self._env.begin()
 
     def __getitem__(self, index):
-        lmdb_data = self._txn.get(str(index).encode())
+        lmdb_data = self._txn().get(str(index).encode())
         data = _deserialize(lmdb_data)
 
         return data
