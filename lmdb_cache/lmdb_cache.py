@@ -79,7 +79,7 @@ def dump2lmdb(db_path: Path, iterable: Iterable, size_multiplier=100, block_size
                         txn.put(key, value)
                 except lmdb.MapFullError:
                     # when LMDB reaches max size: close it, then reopenen with increased size
-                    all_size += max(block_size, len(value)) * size_multiplier
+                    all_size = max(block_size, size) * size_multiplier
                     env.close()
 
                     env = lmdb.open(db_path.as_posix(), subdir=True, map_size=all_size)
