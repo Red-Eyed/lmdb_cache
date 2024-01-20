@@ -13,7 +13,7 @@
 ## Installation
 
 ```bash
-python3 -m pip install lmdb_cache
+python3 -m pip install https://github.com/Red-Eyed/lmdb_cache.git
 ```
 
 ## Usage
