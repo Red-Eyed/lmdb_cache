@@ -7,7 +7,7 @@
 - **Efficient Serialization**: Serialize anything: it utilizes `dill` for object serialization and deserialization.
 - **Two-Stage Data Handling**:
   - **Stage 1**: Use once `dump2lmdb` to efficiently dump large datasets into an LMDB database.
-  - **Stage 2**: Retrieve data using `LMDBReadDict`, supporting multiprocessing for high-throughput applications.
+  - **Stage 2**: Retrieve data using `LMDBReadDict`, **supporting `multiprocessing`** for high-throughput applications.
 - **Supposed to be used whithin ML training pipelines**: Can be integrated with PyTorch `Dataset` and `DataLoader`, making it ideal for multi-process data loading in machine pipelines.
 
 ## Installation
