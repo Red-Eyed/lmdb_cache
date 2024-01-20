@@ -1,3 +1,6 @@
+__author__ = "Vadym Stupakov"
+__maintainer__ = "Vadym Stupakov"
+__email__ = "vadim.stupakov@gmail.com"
 
 from functools import partial
 import shutil
