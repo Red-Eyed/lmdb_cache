@@ -1,6 +1,6 @@
 # LMDB Cache
 
-`lmdb_cache` is a Python library leveraging LMDB for efficient and fast data handling, ideal for machine learning workflows. It simplifies the process of storing and retrieving large datasets using LMDB.
+`lmdb_cache` is a Python library leveraging [LMDB](https://en.wikipedia.org/wiki/Lightning_Memory-Mapped_Database) for efficient and fast data handling, ideal for machine learning workflows. It simplifies the process of storing and retrieving large datasets using LMDB.
 
 ## Key Features
 
