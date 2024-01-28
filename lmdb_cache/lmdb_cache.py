@@ -8,7 +8,6 @@ from typing import Any, Iterable
 import lmdb
 from pathlib import Path
 import dill
-import tqdm
 
 
 def _serialize(obj) -> bytes:
@@ -21,9 +20,28 @@ def _deserialize(data: bytes) -> Any:
     return obj
 
 
+def lmdb_exists(p: Path) -> bool:
+    if p.exists():
+        if p.is_dir():
+            files = {f.name for f in p.iterdir() if f.is_file()}
+            db_files = {"data.mdb", "lock.mdb"}
+            return db_files.issubset(files)
+        else:
+            raise NotADirectoryError(p)
+    else:
+        return False
+
+
 class LMDBReadDict:
     def __init__(self, db_path: Path) -> None:
+        """
+        db_path: valid path which points to a directory which contains "data.mdb" and "lock.mdb" files
+        """
         super().__init__()
+
+        if not lmdb_exists(db_path):
+            raise RuntimeError(f"lmdb doesn't exists: {db_path}")
+
         self._db_path = Path(db_path).expanduser().resolve()
         self._env = self.get_env(self._db_path)
 
@@ -66,47 +84,34 @@ def _get_size(key: bytes, value: bytes):
     return len(key) + len(value)
 
 
-def dump2lmdb(db_path: Path, iterable: Iterable, size_multiplier=100, block_size=1024**2):
+def dump2lmdb(db_path: Path, iterable: Iterable, size_multiplier=100, block_size=1024**2) -> Path:
     db_path.mkdir(parents=True)
     all_size = 0
     open_lmdb = partial(lmdb.open, path=db_path.as_posix(), subdir=True, metasync=False, sync=False, writemap=True, map_async=True)
-    with tqdm.tqdm(desc=f"Dumping to {db_path}", unit="B", unit_scale=True) as pbar:
-        try:
-            env = open_lmdb()
-            for key, value in enumerate(iterable):
-                key, value = _get_data(key, value)
-                size = _get_size(key, value)
-                all_size += size
-                pbar.update(size)
+    try:
+        env = open_lmdb()
+        for i, value in enumerate(iterable):
+            key, value = _get_data(i, value)
+            size = _get_size(key, value)
+            all_size += size
 
-                try:
-                    with env.begin(write=True) as txn:
-                        txn.put(key, value)
-                except lmdb.MapFullError:
-                    # when LMDB reaches max size: close it, then reopenen with increased size
-                    all_size += max(block_size, size) * size_multiplier
-                    env.close()
+            try:
+                with env.begin(write=True) as txn:
+                    txn.put(key, value)
+            except lmdb.MapFullError:
+                # when LMDB reaches max size: close it, then reopenen with increased size
+                all_size += max(block_size, size) * size_multiplier
+                env.close()
 
-                    env = open_lmdb(map_size=all_size)
-                    with env.begin(write=True) as txn:
-                        txn.put(key, value)
+                env = open_lmdb(map_size=all_size)
+                with env.begin(write=True) as txn:
+                    txn.put(key, value)
 
-            env.close()
-        except Exception:
-            shutil.rmtree(db_path)
-            raise
+        env.close()
+    except Exception:
+        shutil.rmtree(db_path)
+        raise
 
+    assert lmdb_exists(db_path)
 
-def cache2lmdb(db_path: Path, iterable: Iterable, overwrite=False) -> LMDBReadDict:
-    if overwrite:
-        shutil.rmtree(db_path, ignore_errors=True)
-
-    if db_path.exists():
-        if len(list(db_path.iterdir())) == 0:
-            db_path.rmdir()
-
-    if not db_path.exists():
-        dump2lmdb(db_path, iterable)
-
-    cache_dataset = LMDBReadDict(db_path)
-    return cache_dataset
+    return db_path
