@@ -84,7 +84,13 @@ def _get_size(key: bytes, value: bytes):
     return len(key) + len(value)
 
 
-def dump2lmdb(db_path: Path, iterable: Iterable, size_multiplier=100, block_size=1024**2) -> Path:
+def dump2lmdb(db_path: Path, iterable: Iterable, size_multiplier=100, block_size=1024**2, overwrite: bool = False) -> Path:
+    if overwrite:
+        shutil.rmtree(db_path)
+
+    if lmdb_exists(db_path):
+        return db_path
+        
     db_path.mkdir(parents=True)
     all_size = 0
     open_lmdb = partial(lmdb.open, path=db_path.as_posix(), subdir=True, metasync=False, sync=False, writemap=True, map_async=True)
