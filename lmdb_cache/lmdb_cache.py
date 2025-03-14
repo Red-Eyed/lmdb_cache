@@ -91,7 +91,7 @@ class LMDBCache(SerializeMixIn):
     @classmethod
     def from_iterable(
         cls, db_path: Path, iterable: Iterable, size_multiplier=100, block_size=1024**2
-    ) -> Path:
+    ):
         db_path.mkdir(parents=True)
         all_size = 0
         open_lmdb = partial(
@@ -129,7 +129,7 @@ class LMDBCache(SerializeMixIn):
 
         assert lmdb_exists(db_path)
 
-        return db_path
+        return cls(db_path)
 
 class SerializeWithCompressionMixIn(SerializeMixIn):
     @classmethod
