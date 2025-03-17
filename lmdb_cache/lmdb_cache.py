@@ -68,7 +68,7 @@ class LMDBCache(SerializeMixIn):
         return env.stat()["entries"]
 
     @staticmethod
-    def get_env(db_path: Path):
+    def get_env(db_path: Path, **kw):
         env = lmdb.open(
             db_path.as_posix(),
             subdir=True,
@@ -76,6 +76,7 @@ class LMDBCache(SerializeMixIn):
             sync=False,
             writemap=True,
             map_async=True,
+            **kw,
         )
         return env
 
