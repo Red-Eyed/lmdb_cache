@@ -9,6 +9,7 @@ import lmdb
 from pathlib import Path
 import dill
 import brotli
+from more_itertools import chunked
 
 def lmdb_exists(p: Path) -> bool:
     if p.exists():
@@ -68,12 +69,14 @@ class LMDBCache(SerializeMixIn):
 
     @staticmethod
     def get_env(db_path: Path):
-        env = lmdb.open(db_path.as_posix(),
-                        subdir=True,
-                        readonly=True,
-                        lock=False,
-                        readahead=False,
-                        meminit=False)
+        env = lmdb.open(
+            db_path.as_posix(),
+            subdir=True,
+            metasync=False,
+            sync=False,
+            writemap=True,
+            map_async=True,
+        )
         return env
 
     def _txn(self):
@@ -90,37 +93,33 @@ class LMDBCache(SerializeMixIn):
 
     @classmethod
     def from_iterable(
-        cls, db_path: Path, iterable: Iterable, size_multiplier=100, block_size=1024**2
+        cls,
+        db_path: Path,
+        iterable: Iterable,
+        size_multiplier=100,
+        block_size=1024**2,
+        batch_size=128,
     ):
         db_path.mkdir(parents=True)
         all_size = 0
-        open_lmdb = partial(
-            lmdb.open,
-            path=db_path.as_posix(),
-            subdir=True,
-            metasync=False,
-            sync=False,
-            writemap=True,
-            map_async=True,
-        )
+        open_lmdb = partial(cls.get_env, db_path=db_path)
         try:
             env = open_lmdb()
-            for i, value in enumerate(iterable):
-                key, value = cls.get_data(i, value)
-                size = cls.get_size(key, value)
-                all_size += size
-
-                try:
-                    with env.begin(write=True) as txn:
-                        txn.put(key, value)
-                except lmdb.MapFullError:
-                    # when LMDB reaches max size: close it, then reopenen with increased size
-                    all_size += max(block_size, size) * size_multiplier
-                    env.close()
-
-                    env = open_lmdb(map_size=all_size)
-                    with env.begin(write=True) as txn:
-                        txn.put(key, value)
+            i = 0
+            for batch in chunked(iterable, batch_size, False):
+                batch_dict = {}
+                for value in batch:
+                    key, value = cls.get_data(i, value)
+                    i += 1
+                    batch_dict[key] = value
+                    env, all_size = cls.write_batch(
+                        env=env,
+                        batch=batch_dict,
+                        all_size=all_size,
+                        block_size=block_size,
+                        size_multiplier=size_multiplier,
+                        open_lmdb=open_lmdb,
+                    )
 
             env.close()
         except Exception:
@@ -130,6 +129,36 @@ class LMDBCache(SerializeMixIn):
         assert lmdb_exists(db_path)
 
         return cls(db_path)
+
+    @classmethod
+    def write_batch(
+        cls,
+        env,
+        batch: dict,
+        all_size,
+        block_size,
+        size_multiplier,
+        open_lmdb,
+    ):
+        for _ in range(2):
+            try:
+                with env.begin(write=True) as txn:
+                    for key, value in batch.items():
+                        size = cls.get_size(key, value)
+                        all_size += size
+                        txn.put(key, value)
+            except lmdb.MapFullError:
+                # when LMDB reaches max size: close it, then reopenen with increased size
+                all_size += max(block_size, size) * size_multiplier
+                env.close()
+
+                env = open_lmdb(map_size=all_size)
+                continue
+            else:
+                break
+
+        return env, all_size
+
 
 class SerializeWithCompressionMixIn(SerializeMixIn):
     @classmethod
