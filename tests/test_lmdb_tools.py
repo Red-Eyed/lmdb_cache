@@ -1,4 +1,5 @@
 from pathlib import Path
+import random
 import pytest
 from multiprocessing import Pool, Process, Value
 from lmdb_cache.lmdb_cache import LMDBCache, LMDBCacheCompressed, lmdb_exists
@@ -119,5 +120,8 @@ def test_concurrent_write_attempt(setup_lmdb):
 def test_from_iterable_large(class_under_test, tmp_path):
     db_path = tmp_path / "lmdb_dump"
     data = [f"data_{i}" for i in range(10_000)]
-    class_under_test.from_iterable(db_path, data)
+    cache = class_under_test.from_iterable(db_path, data)
     assert lmdb_exists(db_path)
+    for i in range(1000):
+        k = random.randint(0, len(data))
+        cache[k]
