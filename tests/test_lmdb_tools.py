@@ -115,3 +115,9 @@ def test_concurrent_write_attempt(setup_lmdb):
     p.start()
     p.join()
     assert success_flag.value == 0  # Expect the write attempt to fail
+
+def test_from_iterable_large(class_under_test, tmp_path):
+    db_path = tmp_path / "lmdb_dump"
+    data = [f"data_{i}" for i in range(10_000)]
+    class_under_test.from_iterable(db_path, data)
+    assert lmdb_exists(db_path)
