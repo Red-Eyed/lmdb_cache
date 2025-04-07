@@ -2,7 +2,7 @@ from pathlib import Path
 import random
 import pytest
 from multiprocessing import Pool, Process, Value
-from lmdb_cache.lmdb_cache import LMDBCache, LMDBCacheCompressed, lmdb_exists
+from lmdb_cache import LMDBCache, LMDBCacheCompressed, lmdb_exists
 
 class_under_test_t = LMDBCache | LMDBCacheCompressed
 
