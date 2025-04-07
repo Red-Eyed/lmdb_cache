@@ -10,7 +10,7 @@ dependencies = [
     "more-itertools"
 ]
 
-[project.dev-dependencies]
+[project.optional-dependencies]
 dev = [
     "ipykernel>=6.29.5",
     "ipython>=8.26.0",
