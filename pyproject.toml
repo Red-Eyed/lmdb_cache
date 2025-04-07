@@ -1,0 +1,25 @@
+[project]
+name = "lmdb_cache"
+description = "LMDB cache which supports multiprocessing"
+version = "1.0.4"
+author = "Vadym Stupakov"
+author_email = "vadim.stupakov@gmail.com"
+mainteiner = "Vadym Stupakov"
+maintainer_email = "vadim.stupakov@gmail.com"
+url = "https://github.com/Red-Eyed/lmdb_cache"
+requires-python = ">=3.10"
+dependencies = [
+    "lmdb",
+    "dill",
+    "brotli",
+    "more-itertools"
+]
+
+[project.optional-dependencies]
+dev = [
+    "ipykernel>=6.29.5",
+    "ipython>=8.26.0",
+    "ruff>=0.5.6",
+    "pip",
+    "pytest",
+]
