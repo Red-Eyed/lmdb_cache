@@ -123,5 +123,5 @@ def test_from_iterable_large(class_under_test, tmp_path):
     cache = class_under_test.from_iterable(db_path, data)
     assert lmdb_exists(db_path)
     for i in range(1000):
-        k = random.randint(0, len(data))
+        k = random.randint(0, len(data) - 1)
         cache[k]
