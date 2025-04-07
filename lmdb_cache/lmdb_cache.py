@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 __author__ = "Vadym Stupakov"
 __maintainer__ = "Vadym Stupakov"
 __email__ = "vadim.stupakov@gmail.com"
