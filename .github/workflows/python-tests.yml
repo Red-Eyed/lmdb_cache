@@ -5,8 +5,10 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+    
+  # Configure Manual Trigger
   workflow_dispatch:
-
+  
 jobs:
   test:
     runs-on: ubuntu-latest
