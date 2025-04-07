@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - name: Check out repository code
@@ -23,14 +23,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
       - name: Install dependencies
         run: |
-          uv sync --all-extras
-          uv run pip install .
+          python3 -m pip install pytest
+          python3 -m install .
 
       - name: Run tests
         run: |
-          uv run pytest -v
+          python3 -m pytest -v

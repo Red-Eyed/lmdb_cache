@@ -2,7 +2,7 @@
 name = "lmdb_cache"
 description = "LMDB cache which supports multiprocessing"
 version = "1.0.4"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     "lmdb",
     "dill",
@@ -10,7 +10,7 @@ dependencies = [
     "more-itertools"
 ]
 
-[project.optional-dependencies]
+[project.dev-dependencies]
 dev = [
     "ipykernel>=6.29.5",
     "ipython>=8.26.0",
