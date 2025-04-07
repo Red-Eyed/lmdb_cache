@@ -1,6 +1,6 @@
 # LMDB Cache
 
-`lmdb_cache` is a lightweight Python utility that wraps [LMDB](https://en.wikipedia.org/wiki/Lightning_Memory-Mapped_Database) for **fast, safe, and multiprocessing-friendly caching**.
+`lmdb_cache` is a lightweight Python utility that wraps [LMDB](https://en.wikipedia.org/wiki/Lightning_Memory-Mapped_Database) for **fast, safe, and multiprocessing-friendly caching**.   
 It is mostly intended for machine learning data pipelines (torch `Dataloader`).
 
 ---
