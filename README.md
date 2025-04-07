@@ -1,73 +1,72 @@
 # LMDB Cache
 
-`lmdb_cache` is a Python library leveraging [LMDB](https://en.wikipedia.org/wiki/Lightning_Memory-Mapped_Database) for efficient and fast data handling, ideal for machine learning workflows. It simplifies the process of storing and retrieving large datasets using LMDB.
+`lmdb_cache` is a lightweight Python utility that wraps [LMDB](https://en.wikipedia.org/wiki/Lightning_Memory-Mapped_Database) for **fast, safe, and multiprocessing-friendly caching**.
+It is mostly intended for machine learning data pipelines (torch `Dataloader`).
 
-## Key Features
+---
 
-- **Efficient Serialization**: Serialize anything: it utilizes `dill` for object serialization and deserialization.
-- **Two-Stage Data Handling**:
-  - **Stage 1**: Use `dump2lmdb` to dump large datasets into an LMDB database. This is the slowest part.
-  - **Stage 2**: Once dataset is dumped, use `LMDBReadDict` to retreve data. It supports **parallel retreving with `multiprocessing`** for high-throughput applications.
-- **Supposed to be used whithin ML training pipelines**: Can be integrated with PyTorch `Dataset` and `DataLoader`, making it ideal for multi-process data loading in machine pipelines.
+## ✅ Features
 
-## Installation
+- **Fast multi-process reads** with memory-mapped performance
+- **Write once, read many** architecture
+- **Clean serialization** with support for any Python object
+- **Safe for PyTorch DataLoader** (supports `num_workers > 0`)
+- **Batched LMDB writes** with auto-expanding map size
+
+---
+
+## 📦 Installation
 
 ```bash
 python3 -m pip install https://github.com/Red-Eyed/lmdb_cache.git
 ```
 
-## Usage
+## 🚀 Example usage
 
-### Stage 1: Data Dumping with `dump2lmdb`
-
+### Simple example
 ```python
-from lmdb_cache import dump2lmdb
+from lmdb_cache import LMDBCache
 from pathlib import Path
+import tempfile
 
-db_path = Path("/path/to/lmdb/database")
-data_iterable = [(i, f"data_{i}") for i in range(1000)]
-dump2lmdb(db_path, data_iterable)
+# Sample data
+data = [("foo", i) for i in range(100)]
+
+# Create a temporary LMDB directory
+db_path = Path(tempfile.gettempdir()) / "example_lmdb"
+
+# Write dataset (once)
+lmdb_cache = LMDBCache.from_iterable(db_path, data)
+
+# Random access by index
+print(lmdb_cache[10])  # Output: ("foo", 10)
+print(len(lmdb_cache))  # Output: 100
+
 ```
 
-### Stage 2: Retrieving Data with `LMDBReadDict`
+### PyTorch `Dataloader` example
 
 ```python
-from lmdb_cache import LMDBReadDict
-from pathlib import Path
-
-db_path = Path("/path/to/lmdb/database")
-lmdb_dict = LMDBReadDict(db_path)
-
-for i in range(1000):
-    data = lmdb_dict[i]
-    print(f"Key: {i}, Data: {data}")
-```
-
-#### Usage within `PyTorch`
-```python
-import torch
-from lmdb_cache import LMDBReadDict
 from torch.utils.data import Dataset, DataLoader
+from lmdb_cache import LMDBCache
+from pathlib import Path
+import tempfile
 
 class LMDBDataset(Dataset):
-    def __init__(self, lmdb_path):
-        self.lmdb_dict = LMDBReadDict(lmdb_path)
+    def __init__(self, db_path):
+        self.db = LMDBCache(db_path)
 
     def __len__(self):
-        return len(self.lmdb_dict)
+        return len(self.db)
 
     def __getitem__(self, idx):
-        return self.lmdb_dict[idx]
+        return self.db[idx]
 
-# Usage
-# dump once
-db_path = Path("/path/to/lmdb/database")
-dump2lmdb(db_path, data_iterable)
+# Load LMDB
+db_path = Path(tempfile.gettempdir()) / "example_lmdb"
+dataset = LMDBDataset(db_path)
+loader = DataLoader(dataset, batch_size=16, num_workers=4, shuffle=True)
 
-# read multiple times
-lmdb_dataset = LMDBDataset(db_path)
-data_loader = DataLoader(lmdb_dataset, batch_size=32, shuffle=True)
-
-for batch in data_loader:
-    # Process your batch
+for batch in loader:
+    print(batch)  # Use your data here
 ```
