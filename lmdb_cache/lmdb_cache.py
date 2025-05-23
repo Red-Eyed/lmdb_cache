@@ -104,6 +104,13 @@ class LMDBCache(SerializeMixIn):
 
         return self.deserialize(raw)
 
+    def __iter__(self):
+        """
+        Yield all values in insertion order (or sorted order if desired).
+        """
+        for i in range(len(self)):
+            yield self[i]
+
     @staticmethod
     def get_read_env(db_path: Path, **kw) -> lmdb.Environment:
         """
