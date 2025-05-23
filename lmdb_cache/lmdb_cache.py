@@ -8,7 +8,7 @@ from typing import Any, Iterable
 import lmdb
 from pathlib import Path
 import dill
-import brotli
+import zstandard
 from more_itertools import chunked
 
 
@@ -255,12 +255,12 @@ class SerializeWithCompressionMixIn(SerializeMixIn):
     @classmethod
     def serialize(cls, obj) -> bytes:
         data = super().serialize(obj)
-        data = brotli.compress(data, quality=3)
+        data = zstandard.compress(data, level=3)
         return data
 
     @classmethod
     def deserialize(cls, data: bytes) -> Any:
-        data = brotli.decompress(data)
+        data = zstandard.decompress(data)
         data = super().deserialize(data)
         return data
 

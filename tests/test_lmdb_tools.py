@@ -182,7 +182,7 @@ def test_varied_batch_and_map_size(
     tmp_path, batch_size, size_multiplier, class_under_test
 ):
     db_path = tmp_path / "lmdb_varied"
-    data = generate_dataset(batch_size * 2, 1)
+    data = generate_dataset(batch_size * 2, 10)
     db = class_under_test.from_iterable(
         db_path,
         data,
