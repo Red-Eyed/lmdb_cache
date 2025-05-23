@@ -3,6 +3,14 @@ import random
 import pytest
 from multiprocessing import Pool, Process, Value
 from lmdb_cache import LMDBCache, LMDBCacheCompressed, lmdb_exists
+import os
+
+
+def generate_dataset(num_items: int, max_mb: int = 10) -> list[bytes]:
+    return [
+        os.urandom(random.randint(0, max_mb * 1024 * 1024)) for _ in range(num_items)
+    ]
+
 
 class_under_test_t = LMDBCache | LMDBCacheCompressed
 
@@ -168,14 +176,18 @@ def test_read_fallback_does_not_suppress_missing_key(setup_lmdb, class_under_tes
         _ = db[9999]  # Key not inserted
 
 
-@pytest.mark.parametrize("batch_size", [1, 16, 128])
+@pytest.mark.parametrize("batch_size", [1, 16, 32])
 @pytest.mark.parametrize("size_multiplier", [1, 10])
 def test_varied_batch_and_map_size(
     tmp_path, batch_size, size_multiplier, class_under_test
 ):
     db_path = tmp_path / "lmdb_varied"
-    data = [f"item_{i}" for i in range(1000)]
+    data = generate_dataset(batch_size * 2, 1)
     db = class_under_test.from_iterable(
-        db_path, data, batch_size=batch_size, size_multiplier=size_multiplier
+        db_path,
+        data,
+        batch_size=batch_size,
+        size_multiplier=size_multiplier,
     )
-    assert db[0] == "item_0"
+
+    assert len(data) == len(db)

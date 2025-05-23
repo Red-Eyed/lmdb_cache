@@ -212,7 +212,8 @@ class LMDBCache(SerializeMixIn):
         Returns:
             (new_env, new_total_size)
         """
-        for _ in range(2):
+        max_iteration = 10
+        for _ in range(max_iteration):
             try:
                 with env.begin(write=True) as txn:
                     for key, value in batch.items():
@@ -223,8 +224,8 @@ class LMDBCache(SerializeMixIn):
                 all_size += block_size * size_multiplier
                 env.close()
                 env = open_lmdb(map_size=all_size)
-                continue
-            break
+            else:
+                break
         return env, all_size
 
     @classmethod
@@ -247,7 +248,7 @@ class SerializeWithCompressionMixIn(SerializeMixIn):
     @classmethod
     def serialize(cls, obj) -> bytes:
         data = super().serialize(obj)
-        data = brotli.compress(data)
+        data = brotli.compress(data, quality=3)
         return data
 
     @classmethod
