@@ -176,10 +176,11 @@ class LMDBCache(SerializeMixIn):
             i = 0
             for batch in chunked(iterable, batch_size, strict=False):
                 # Build {key: serialized_value} map for the batch
-                batch_dict = {
-                    cls.get_data(i + j, val)[0]: cls.get_data(i + j, val)[1]
-                    for j, val in enumerate(batch)
-                }
+                batch_dict = {}
+                for j, val in enumerate(batch):
+                    key, value = cls.get_data(i + j, val)
+                    batch_dict[key] = value
+
                 i += len(batch)
                 # Write batch into LMDB
                 env, all_size = cls.write_batch(
