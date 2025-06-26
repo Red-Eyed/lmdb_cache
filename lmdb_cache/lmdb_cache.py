@@ -125,7 +125,6 @@ class LMDBCache(SerializeMixIn):
             readahead=False,
             meminit=False,
             max_readers=2048,
-            map_size=int(1e12),
             **kw,
         )
 
